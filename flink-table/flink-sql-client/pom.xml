@@ -27,7 +27,7 @@ under the License.
 		<relativePath>..</relativePath>
 	</parent>
 
-	<artifactId>flink-sql-client_${scala.binary.version}</artifactId>
+	<artifactId>flink-sql-client-yz_${scala.binary.version}</artifactId>
 	<name>Flink : Table : SQL Client</name>
 	<description>
 		This module contains the SQL Client for exploring and
@@ -546,6 +546,7 @@ under the License.
 						</configuration>
 					</execution>
 				</executions>
+
 			</plugin>
 
 			<!-- Test dependency classloading -->
