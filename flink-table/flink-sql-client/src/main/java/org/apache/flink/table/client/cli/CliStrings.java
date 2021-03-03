@@ -318,15 +318,14 @@ public final class CliStrings {
 
     // --------------------------------------------------------------------------------------------
 
-    public static AttributedString messageInfo(String message) {
-        return new AttributedStringBuilder()
-                .style(AttributedStyle.DEFAULT.bold().foreground(AttributedStyle.BLUE))
+    public static String messageInfo(String message) {
+        return new StringBuilder()
                 .append("[INFO] ")
                 .append(message)
-                .toAttributedString();
+                .toString();
     }
 
-    public static AttributedString messageError(String message, Throwable t) {
+    public static String messageError(String message, Throwable t) {
         while (t.getCause() != null
                 && t.getCause().getMessage() != null
                 && !t.getCause().getMessage().isEmpty()) {
@@ -336,14 +335,13 @@ public final class CliStrings {
         // return messageError(message, ExceptionUtils.stringifyException(t));
     }
 
-    public static AttributedString messageError(String message) {
+    public static String messageError(String message) {
         return messageError(message, (String) null);
     }
 
-    public static AttributedString messageError(String message, String s) {
-        final AttributedStringBuilder builder =
-                new AttributedStringBuilder()
-                        .style(AttributedStyle.DEFAULT.bold().foreground(AttributedStyle.RED))
+    public static String messageError(String message, String s) {
+        final StringBuilder builder =
+                new StringBuilder()
                         .append("[ERROR] ")
                         .append(message);
 
@@ -351,7 +349,7 @@ public final class CliStrings {
             builder.append(" Reason:\n").append(s);
         }
 
-        return builder.toAttributedString();
+        return builder.toString();
     }
 
     private static AttributedString formatCommand(SqlCommand cmd, String description) {

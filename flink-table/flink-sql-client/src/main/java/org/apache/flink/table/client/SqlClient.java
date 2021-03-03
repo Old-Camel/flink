@@ -27,14 +27,11 @@ import org.apache.flink.table.client.gateway.Executor;
 import org.apache.flink.table.client.gateway.SessionContext;
 import org.apache.flink.table.client.gateway.local.LocalExecutor;
 
-import org.apache.commons.lang3.SystemUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URL;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -70,13 +67,15 @@ public class SqlClient {
     public static final String MODE_GATEWAY = "gateway";
 
     public static final String DEFAULT_SESSION_ID = "default";
+    private CliClient cliClient;
+    private String sessionId;
 
     public SqlClient(boolean isEmbedded, CliOptions options) {
         this.isEmbedded = isEmbedded;
         this.options = options;
     }
 
-    private void start() {
+    public CliClient start() {
         if (isEmbedded) {
             // create local executor with default environment
             final List<URL> jars;
@@ -93,10 +92,10 @@ public class SqlClient {
             }
             final Executor executor = new LocalExecutor(options.getDefaults(), jars, libDirs);
             executor.start();
-
             // create CLI client with session environment
             final Environment sessionEnv = readSessionEnvironment(options.getEnvironment());
-            appendPythonConfig(sessionEnv, options.getPythonConfiguration());
+            //注释掉 pythonconfig 这应该用不到
+            //appendPythonConfig(sessionEnv, options.getPythonConfiguration());
             final SessionContext context;
             if (options.getSessionId() == null) {
                 context = new SessionContext(DEFAULT_SESSION_ID, sessionEnv);
@@ -106,19 +105,39 @@ public class SqlClient {
 
             // Open an new session
             String sessionId = executor.openSession(context);
-            try {
-                // add shutdown hook
-                Runtime.getRuntime()
-                        .addShutdownHook(new EmbeddedShutdownThread(sessionId, executor));
-
-                // do the actual work
-                openCli(sessionId, executor);
-            } finally {
+            this.sessionId = sessionId;
+            CliClient cliClient = openCli(sessionId, executor);
+            this.cliClient = cliClient;
+            return cliClient;
+            //try {
+            //    // add shutdown hook
+            // //   去除
+            // /*   Runtime.getRuntime()
+            //            .addShutdownHook(new EmbeddedShutdownThread(sessionId, executor));*/
+            //
+            //    // do the actual work
+            //    CliClient cliClient = openCli(sessionId, executor);
+            //    this.cliClient=cliClient;
+            //}catch (Exception e){
+            //    throw e;
+            //}
+           /* finally {
                 executor.closeSession(sessionId);
-            }
+            }*/
         } else {
             throw new SqlClientException("Gateway mode is not supported yet.");
         }
+    }
+
+    public CliClient getCliClient() {
+        return cliClient;
+    }
+
+    public void close() {
+        if (this.sessionId == null) {
+            throw new SqlClientException("session id 不存在,请先调用start方法");
+        }
+        this.cliClient.getExecutor().closeSession(this.sessionId);
     }
 
     /**
@@ -127,18 +146,20 @@ public class SqlClient {
      * @param sessionId session identifier for the current client.
      * @param executor executor
      */
-    private void openCli(String sessionId, Executor executor) {
-        Path historyFilePath;
-        if (options.getHistoryFilePath() != null) {
+    private CliClient openCli(String sessionId, Executor executor) {
+        //Path historyFilePath;
+        //  删除history 文件
+      /*  if (options.getHistoryFilePath() != null) {
             historyFilePath = Paths.get(options.getHistoryFilePath());
         } else {
             historyFilePath =
                     Paths.get(
                             System.getProperty("user.home"),
                             SystemUtils.IS_OS_WINDOWS ? "flink-sql-history" : ".flink-sql-history");
-        }
-
-        try (CliClient cli = new CliClient(sessionId, executor, historyFilePath)) {
+        }*/
+        CliClient cli = new CliClient(sessionId, executor);
+        return cli;
+       /* try (CliClient cli = new CliClient(sessionId, executor)) {
             // interactive CLI mode
             if (options.getUpdateStatement() == null) {
                 cli.open();
@@ -151,7 +172,7 @@ public class SqlClient {
                             "Could not submit given SQL update statement to cluster.");
                 }
             }
-        }
+        }*/
     }
 
     // --------------------------------------------------------------------------------------------
@@ -247,4 +268,5 @@ public class SqlClient {
             System.out.println("done.");
         }
     }
+
 }

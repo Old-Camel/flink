@@ -251,7 +251,7 @@ public class LocalExecutor implements Executor {
      * exist.
      */
     @VisibleForTesting
-    protected ExecutionContext<?> getExecutionContext(String sessionId)
+    public ExecutionContext<?> getExecutionContext(String sessionId)
             throws SqlExecutionException {
         ExecutionContext<?> context = this.contextMap.get(sessionId);
         if (context == null) {

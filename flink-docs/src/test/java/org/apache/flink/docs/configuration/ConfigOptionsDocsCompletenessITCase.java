@@ -261,7 +261,7 @@ public class ConfigOptionsDocsCompletenessITCase {
                             String description =
                                     tableRow.child(3).childNodes().stream()
                                             .map(Object::toString)
-                                            .collect(Collectors.joining());
+                                            .collect(Collectors.joining("\n"));
                             return new DocumentedOption(
                                     key,
                                     defaultValue,

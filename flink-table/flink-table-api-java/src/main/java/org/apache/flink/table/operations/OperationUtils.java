@@ -89,7 +89,7 @@ public class OperationUtils {
         String childrenDescription =
                 children.stream()
                         .map(child -> OperationUtils.indent(childToString.apply(child)))
-                        .collect(Collectors.joining());
+                        .collect(Collectors.joining("\n"));
 
         return stringBuilder.append(childrenDescription).toString();
     }

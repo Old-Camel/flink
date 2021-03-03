@@ -649,6 +649,7 @@ public class ExecutionContext<ClusterID> {
 
             final Map<String, String> executorProperties = settings.toExecutorProperties();
             executor = lookupExecutor(executorProperties, streamExecEnv);
+            //创建tableEnv
             tableEnv =
                     createStreamTableEnvironment(
                             streamExecEnv,
