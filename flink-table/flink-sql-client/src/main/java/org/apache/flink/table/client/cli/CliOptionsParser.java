@@ -29,6 +29,8 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
+import org.apache.flink.table.client.config.Environment;
+
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -260,13 +262,13 @@ public class CliOptionsParser {
             return new CliOptions(
                     line.hasOption(CliOptionsParser.OPTION_HELP.getOpt()),
                     checkSessionId(line),
-                    checkUrl(line, CliOptionsParser.OPTION_ENVIRONMENT),
-                    checkUrl(line, CliOptionsParser.OPTION_DEFAULTS),
+                    new Environment(),
+                    new Environment(),
                     checkUrls(line, CliOptionsParser.OPTION_JAR),
                     checkUrls(line, CliOptionsParser.OPTION_LIBRARY),
                     line.getOptionValue(CliOptionsParser.OPTION_UPDATE.getOpt()),
                     line.getOptionValue(CliOptionsParser.OPTION_HISTORY.getOpt()),
-                    getPythonConfiguration(line));
+                    getPythonConfiguration(line),null);
         } catch (ParseException e) {
             throw new SqlClientException(e.getMessage());
         }
@@ -279,7 +281,7 @@ public class CliOptionsParser {
             return new CliOptions(
                     line.hasOption(CliOptionsParser.OPTION_HELP.getOpt()),
                     checkSessionId(line),
-                    checkUrl(line, CliOptionsParser.OPTION_ENVIRONMENT),
+                   new Environment(),
                     null,
                     checkUrls(line, CliOptionsParser.OPTION_JAR),
                     checkUrls(line, CliOptionsParser.OPTION_LIBRARY),
@@ -299,7 +301,7 @@ public class CliOptionsParser {
                     line.hasOption(CliOptionsParser.OPTION_HELP.getOpt()),
                     null,
                     null,
-                    checkUrl(line, CliOptionsParser.OPTION_DEFAULTS),
+                    new Environment(),
                     checkUrls(line, CliOptionsParser.OPTION_JAR),
                     checkUrls(line, CliOptionsParser.OPTION_LIBRARY),
                     null,

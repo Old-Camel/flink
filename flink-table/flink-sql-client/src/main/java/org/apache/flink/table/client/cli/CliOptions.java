@@ -19,6 +19,7 @@
 package org.apache.flink.table.client.cli;
 
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.table.client.config.Environment;
 
 import java.net.URL;
 import java.util.List;
@@ -31,19 +32,41 @@ public class CliOptions {
 
     private final boolean isPrintHelp;
     private final String sessionId;
-    private final URL environment;
-    private final URL defaults;
+    private final Environment environment;
+    private final Environment defaults;
     private final List<URL> jars;
     private final List<URL> libraryDirs;
     private final String updateStatement;
     private final String historyFilePath;
     private final Configuration pythonConfiguration;
+    private final Configuration flinkConf;
 
     public CliOptions(
             boolean isPrintHelp,
             String sessionId,
-            URL environment,
-            URL defaults,
+            Environment environment,
+            Environment defaults,
+            List<URL> jars,
+            List<URL> libraryDirs,
+            String updateStatement,
+            String historyFilePath,
+            Configuration pythonConfiguration, Configuration flinkConf) {
+        this.isPrintHelp = isPrintHelp;
+        this.sessionId = sessionId;
+        this.environment = environment;
+        this.defaults = defaults;
+        this.jars = jars;
+        this.libraryDirs = libraryDirs;
+        this.updateStatement = updateStatement;
+        this.historyFilePath = historyFilePath;
+        this.pythonConfiguration = pythonConfiguration;
+        this.flinkConf=flinkConf;
+    }
+    public CliOptions(
+            boolean isPrintHelp,
+            String sessionId,
+            Environment environment,
+            Environment defaults,
             List<URL> jars,
             List<URL> libraryDirs,
             String updateStatement,
@@ -58,8 +81,11 @@ public class CliOptions {
         this.updateStatement = updateStatement;
         this.historyFilePath = historyFilePath;
         this.pythonConfiguration = pythonConfiguration;
+        this.flinkConf=null;
     }
-
+    public Configuration getFlinkConf() {
+        return flinkConf;
+    }
     public boolean isPrintHelp() {
         return isPrintHelp;
     }
@@ -68,11 +94,11 @@ public class CliOptions {
         return sessionId;
     }
 
-    public URL getEnvironment() {
+    public Environment getEnvironment() {
         return environment;
     }
 
-    public URL getDefaults() {
+    public Environment getDefaults() {
         return defaults;
     }
 

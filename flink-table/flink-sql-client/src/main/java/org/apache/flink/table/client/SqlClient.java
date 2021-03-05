@@ -90,7 +90,7 @@ public class SqlClient {
             } else {
                 libDirs = Collections.emptyList();
             }
-            final Executor executor = new LocalExecutor(options.getDefaults(), jars, libDirs);
+            final Executor executor = new LocalExecutor(options.getDefaults(), jars, libDirs,options.getFlinkConf());
             executor.start();
             // create CLI client with session environment
             final Environment sessionEnv = readSessionEnvironment(options.getEnvironment());
@@ -177,21 +177,14 @@ public class SqlClient {
 
     // --------------------------------------------------------------------------------------------
 
-    private static Environment readSessionEnvironment(URL envUrl) {
+    private static Environment readSessionEnvironment(Environment env) {
         // use an empty environment by default
-        if (envUrl == null) {
+        if (env == null) {
             System.out.println("No session environment specified.");
             return new Environment();
         }
 
-        System.out.println("Reading session environment from: " + envUrl);
-        LOG.info("Using session environment file: {}", envUrl);
-        try {
-            return Environment.parse(envUrl);
-        } catch (IOException e) {
-            throw new SqlClientException(
-                    "Could not read session environment file at: " + envUrl, e);
-        }
+       return env;
     }
 
     private static void appendPythonConfig(Environment env, Configuration pythonConfiguration) {

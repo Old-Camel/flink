@@ -25,10 +25,12 @@ import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.client.cli.CliFrontend;
 import org.apache.flink.client.cli.CliFrontendParser;
 import org.apache.flink.client.cli.CustomCommandLine;
+import org.apache.flink.client.cli.DefaultCLI;
 import org.apache.flink.client.deployment.ClusterClientServiceLoader;
 import org.apache.flink.client.deployment.ClusterDescriptor;
 import org.apache.flink.client.deployment.DefaultClusterClientServiceLoader;
 import org.apache.flink.client.program.ClusterClient;
+import org.apache.flink.configuration.ConfigOptions;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.DeploymentOptions;
 import org.apache.flink.configuration.GlobalConfiguration;
@@ -43,6 +45,7 @@ import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.api.internal.TableEnvironmentInternal;
 import org.apache.flink.table.catalog.UnresolvedIdentifier;
 import org.apache.flink.table.client.SqlClientException;
+import org.apache.flink.table.client.cli.CliOptionsParser;
 import org.apache.flink.table.client.config.Environment;
 import org.apache.flink.table.client.gateway.Executor;
 import org.apache.flink.table.client.gateway.ProgramTargetDescriptor;
@@ -116,57 +119,35 @@ public class LocalExecutor implements Executor {
                     "(INSERT\\s+(INTO|OVERWRITE).*)", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
 
     /** Creates a local executor for submitting table programs and retrieving results. */
-    public LocalExecutor(URL defaultEnv, List<URL> jars, List<URL> libraries) {
+    public LocalExecutor( Environment defaultEnvironment, List<URL> jars, List<URL> libraries, Configuration flinkConfig) {
         // discover configuration
-        final String flinkConfigDir;
+        final String flinkConfigDir="";
         try {
             // find the configuration directory
-            flinkConfigDir = CliFrontend.getConfigurationDirectoryFromEnv();
+            //flinkConfigDir = CliFrontend.getConfigurationDirectoryFromEnv();
 
             // load the global configuration
-            this.flinkConfig = GlobalConfiguration.loadConfiguration(flinkConfigDir);
+            this.flinkConfig = flinkConfig;
 
             // initialize default file system
             FileSystem.initialize(
                     flinkConfig, PluginUtils.createPluginManagerFromRootFolder(flinkConfig));
 
             // load command lines for deployment
-            this.commandLines = CliFrontend.loadCustomCommandLines(flinkConfig, flinkConfigDir);
+            //去除yarn cli;
+            this.commandLines =  Collections.singletonList(new DefaultCLI());
             this.commandLineOptions = collectCommandLineOptions(commandLines);
         } catch (Exception e) {
             throw new SqlClientException("Could not load Flink configuration.", e);
         }
 
         // try to find a default environment
-        if (defaultEnv == null) {
-            final String defaultFilePath = flinkConfigDir + "/" + DEFAULT_ENV_FILE;
-            System.out.println("No default environment specified.");
-            System.out.print("Searching for '" + defaultFilePath + "'...");
-            final File file = new File(defaultFilePath);
-            if (file.exists()) {
-                System.out.println("found.");
-                try {
-                    defaultEnv = Path.fromLocalFile(file).toUri().toURL();
-                } catch (MalformedURLException e) {
-                    throw new SqlClientException(e);
-                }
-                LOG.info("Using default environment file: {}", defaultEnv);
-            } else {
-                System.out.println("not found.");
-            }
-        }
 
         // inform user
-        if (defaultEnv != null) {
-            System.out.println("Reading default environment from: " + defaultEnv);
-            try {
-                defaultEnvironment = Environment.parse(defaultEnv);
-            } catch (IOException e) {
-                throw new SqlClientException(
-                        "Could not read default environment file at: " + defaultEnv, e);
-            }
+        if (defaultEnvironment != null) {
+           this.defaultEnvironment=defaultEnvironment;
         } else {
-            defaultEnvironment = new Environment();
+            this.defaultEnvironment = new Environment();
         }
         this.contextMap = new ConcurrentHashMap<>();
 
@@ -192,7 +173,6 @@ public class LocalExecutor implements Executor {
         this.commandLines = Collections.singletonList(commandLine);
         this.commandLineOptions = collectCommandLineOptions(commandLines);
         this.contextMap = new ConcurrentHashMap<>();
-
         // prepare result store
         this.resultStore = new ResultStore(flinkConfig);
         this.clusterClientServiceLoader = checkNotNull(clusterClientServiceLoader);
