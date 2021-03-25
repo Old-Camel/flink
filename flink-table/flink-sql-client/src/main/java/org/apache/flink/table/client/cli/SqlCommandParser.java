@@ -236,7 +236,7 @@ public final class SqlCommandParser {
     private static final int DEFAULT_PATTERN_FLAGS = Pattern.CASE_INSENSITIVE | Pattern.DOTALL;
 
     /** Supported SQL commands. */
-    enum SqlCommand {
+    public enum SqlCommand {
         QUIT("(QUIT|EXIT)", NO_OPERANDS),
 
         CLEAR("CLEAR", NO_OPERANDS),
