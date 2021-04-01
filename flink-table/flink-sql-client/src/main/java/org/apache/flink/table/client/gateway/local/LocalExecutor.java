@@ -407,6 +407,11 @@ public class LocalExecutor implements Executor {
         final ExecutionContext<?> context = getExecutionContext(sessionId);
         return executeUpdateInternal(sessionId, context, statement);
     }
+    public ProgramTargetDescriptor executeUpdateWithName(String name,String sessionId, String statement)
+            throws SqlExecutionException {
+        final ExecutionContext<?> context = getExecutionContext(sessionId);
+        return executeUpdateInternalWithName(name,sessionId, context, statement);
+    }
 
     // --------------------------------------------------------------------------------------------
 
@@ -465,6 +470,49 @@ public class LocalExecutor implements Executor {
 
         // create pipeline
         final String jobName = sessionId + ": " + statement;
+        final Pipeline pipeline;
+        try {
+            pipeline = context.createPipeline(jobName);
+        } catch (Throwable t) {
+            // catch everything such that the statement does not crash the executor
+            throw new SqlExecutionException("Invalid SQL statement.", t);
+        }
+
+        // create a copy so that we can change settings without affecting the original config
+        Configuration configuration = new Configuration(context.getFlinkConfig());
+        // for update queries we don't wait for the job result, so run in detached mode
+        configuration.set(DeploymentOptions.ATTACHED, false);
+
+        // create execution
+        final ProgramDeployer deployer =
+                new ProgramDeployer(configuration, jobName, pipeline, context.getClassLoader());
+
+        // wrap in classloader because CodeGenOperatorFactory#getStreamOperatorClass
+        // requires to access UDF in deployer.deploy().
+        return context.wrapClassLoader(
+                () -> {
+                    try {
+                        // blocking deployment
+                        JobClient jobClient = deployer.deploy().get();
+                        return ProgramTargetDescriptor.of(jobClient.getJobID());
+                    } catch (Exception e) {
+                        throw new RuntimeException("Error running SQL job.", e);
+                    }
+                });
+    }
+    private <C> ProgramTargetDescriptor executeUpdateInternalWithName(String name,
+            String sessionId, ExecutionContext<C> context, String statement) {
+
+        applyUpdate(context, statement);
+
+        // Todo: we should refactor following condition after TableEnvironment has support submit
+        // job directly.
+        if (!INSERT_SQL_PATTERN.matcher(statement.trim()).matches()) {
+            return null;
+        }
+
+        // create pipeline
+        final String jobName = name;
         final Pipeline pipeline;
         try {
             pipeline = context.createPipeline(jobName);

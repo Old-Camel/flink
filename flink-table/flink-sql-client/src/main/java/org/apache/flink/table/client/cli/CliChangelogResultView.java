@@ -109,6 +109,7 @@ public class CliChangelogResultView
                     client.getExecutor()
                             .retrieveResultChanges(
                                     client.getSessionId(), resultDescriptor.getResultId());
+
         } catch (SqlExecutionException e) {
             close(e);
             return;

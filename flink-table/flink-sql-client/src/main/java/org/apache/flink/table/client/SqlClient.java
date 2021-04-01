@@ -91,6 +91,7 @@ public class SqlClient {
                 libDirs = Collections.emptyList();
             }
             final Executor executor = new LocalExecutor(options.getDefaults(), jars, libDirs,options.getFlinkConf());
+
             executor.start();
             // create CLI client with session environment
             final Environment sessionEnv = readSessionEnvironment(options.getEnvironment());
