@@ -199,8 +199,7 @@ public class LocalExecutor implements Executor {
     public String openSession(SessionContext sessionContext) throws SqlExecutionException {
         String sessionId = sessionContext.getSessionId();
         if (this.contextMap.containsKey(sessionId)) {
-            throw new SqlExecutionException(
-                    "Found another session with the same session identifier: " + sessionId);
+           return sessionId;
         } else {
             this.contextMap.put(sessionId, createExecutionContextBuilder(sessionContext).build());
         }

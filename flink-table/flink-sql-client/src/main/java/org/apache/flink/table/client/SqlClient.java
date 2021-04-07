@@ -59,23 +59,31 @@ import static org.apache.flink.table.client.config.entries.ConfigurationEntry.me
 public class SqlClient {
 
     private static final Logger LOG = LoggerFactory.getLogger(SqlClient.class);
-
     private final boolean isEmbedded;
     private final CliOptions options;
-
     public static final String MODE_EMBEDDED = "embedded";
     public static final String MODE_GATEWAY = "gateway";
 
     public static final String DEFAULT_SESSION_ID = "default";
-    private CliClient cliClient;
-    private String sessionId;
+    private Executor executor;
+    private Environment sessionEnv;
 
     public SqlClient(boolean isEmbedded, CliOptions options) {
         this.isEmbedded = isEmbedded;
         this.options = options;
     }
+    public CliClient openSession(String sessionId) {
+        final SessionContext context;
+        context = new SessionContext(sessionId, sessionEnv);
+        // Open an new session
+        executor.openSession(context);
 
-    public CliClient start() {
+        CliClient cliClient = openCli(sessionId, executor);
+
+        return cliClient;
+    }
+
+    public void start() {
         if (isEmbedded) {
             // create local executor with default environment
             final List<URL> jars;
@@ -90,55 +98,30 @@ public class SqlClient {
             } else {
                 libDirs = Collections.emptyList();
             }
-            final Executor executor = new LocalExecutor(options.getDefaults(), jars, libDirs,options.getFlinkConf());
+            final Executor executor = new LocalExecutor(
+                    options.getDefaults(),
+                    jars,
+                    libDirs,
+                    options.getFlinkConf());
 
             executor.start();
             // create CLI client with session environment
-            final Environment sessionEnv = readSessionEnvironment(options.getEnvironment());
-            //注释掉 pythonconfig 这应该用不到
-            //appendPythonConfig(sessionEnv, options.getPythonConfiguration());
-            final SessionContext context;
-            if (options.getSessionId() == null) {
-                context = new SessionContext(DEFAULT_SESSION_ID, sessionEnv);
-            } else {
-                context = new SessionContext(options.getSessionId(), sessionEnv);
-            }
+            sessionEnv = readSessionEnvironment(options.getEnvironment());
 
-            // Open an new session
-            String sessionId = executor.openSession(context);
-            this.sessionId = sessionId;
-            CliClient cliClient = openCli(sessionId, executor);
-            this.cliClient = cliClient;
-            return cliClient;
-            //try {
-            //    // add shutdown hook
-            // //   去除
-            // /*   Runtime.getRuntime()
-            //            .addShutdownHook(new EmbeddedShutdownThread(sessionId, executor));*/
-            //
-            //    // do the actual work
-            //    CliClient cliClient = openCli(sessionId, executor);
-            //    this.cliClient=cliClient;
-            //}catch (Exception e){
-            //    throw e;
-            //}
-           /* finally {
-                executor.closeSession(sessionId);
-            }*/
+            this.executor = executor;
+
+
         } else {
             throw new SqlClientException("Gateway mode is not supported yet.");
         }
     }
 
-    public CliClient getCliClient() {
-        return cliClient;
-    }
 
-    public void close() {
-        if (this.sessionId == null) {
-            throw new SqlClientException("session id 不存在,请先调用start方法");
-        }
-        this.cliClient.getExecutor().closeSession(this.sessionId);
+
+
+    public void close(String sessionId) {
+
+        this.executor.closeSession(sessionId);
     }
 
     /**
@@ -185,7 +168,7 @@ public class SqlClient {
             return new Environment();
         }
 
-       return env;
+        return env;
     }
 
     private static void appendPythonConfig(Environment env, Configuration pythonConfiguration) {
