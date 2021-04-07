@@ -58,7 +58,7 @@ public class CliClient implements AutoCloseable {
 
     private static final Logger LOG = LoggerFactory.getLogger(CliClient.class);
 
-    private final Executor executor;
+    private  Executor executor;
 
     private final String sessionId;
 
@@ -137,6 +137,9 @@ public class CliClient implements AutoCloseable {
 
     public Executor getExecutor() {
         return executor;
+    }
+    public void setExecutor(Executor executor) {
+       this. executor=executor;
     }
 
     /** Opens the interactive CLI shell. */
